@@ -19,7 +19,8 @@ public interface AuthenticationFailedHandler {
      * @param request                 request
      * @param response                response
      * @param authenticationException authenticationException
+     * @return 是否执行下一个 handler
      * @throws Exception 别的异常
      */
-    void handle(HttpServletRequest request, HttpServletResponse response, AuthenticationException authenticationException) throws Exception;
+    boolean handle(HttpServletRequest request, HttpServletResponse response, AuthenticationException authenticationException) throws Exception;
 }

@@ -1,6 +1,6 @@
 package com.imzhy.fence.token;
 
-import com.imzhy.fence.config.SecurityConfigureAdapter;
+import com.imzhy.fence.config.TokenConfig;
 import com.imzhy.fence.util.DateUtils;
 import com.imzhy.fence.util.RandomUtils;
 
@@ -51,9 +51,9 @@ public class Token implements Serializable {
         this.refreshTokenExpireTime = refreshTokenExpireTime;
     }
 
-    public static Token build(SecurityConfigureAdapter.TokenConfig tokenConfig) {
+    public static Token build(TokenConfig tokenConfig) {
         Token token = new Token();
-        if (Objects.isNull(tokenConfig)) tokenConfig = new SecurityConfigureAdapter.TokenConfig();
+        if (Objects.isNull(tokenConfig)) tokenConfig = new TokenConfig();
 
         long time = DateUtils.getNowTimeStamp();
 

@@ -1,8 +1,9 @@
 package com.imzhy.fence.authentication;
 
 import com.imzhy.fence.authentication.handler.AuthenticationFailedHandler;
+import com.imzhy.fence.config.Configure;
 import com.imzhy.fence.config.SecurityAccount;
-import com.imzhy.fence.config.SecurityConfigureAdapter;
+import com.imzhy.fence.config.TokenConfig;
 import com.imzhy.fence.exception.authentication.AuthenticationException;
 import com.imzhy.fence.exception.authentication.account.AccountExpiredException;
 import com.imzhy.fence.exception.authentication.account.AccountLockedException;
@@ -21,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 @Order(1)
@@ -30,14 +29,18 @@ import java.util.Objects;
 public class AuthenticationFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
-    List<AbstractAuthenticator> authenticatorArr = new ArrayList<>();
+    private final Configure configure;
+
+    public AuthenticationFilter(Configure configure) {
+        this.configure = configure;
+    }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
-        AbstractAuthenticator authenticator = SecurityConfigureAdapter.getAuthenticatorArr()
+        AbstractAuthenticator authenticator = configure.getAuthenticatorArr()
                 .stream()
                 .filter(abstractAuthenticator -> abstractAuthenticator.matches(request))
                 .findFirst()
@@ -73,7 +76,7 @@ public class AuthenticationFilter implements Filter {
                 authenticator.afterAuthentication(securityAccount, authenticationRequest, request, response);
 
                 // 开始颁发 token
-                SecurityConfigureAdapter.TokenConfig tokenConfig = SecurityConfigureAdapter.getTokenConfig();
+                TokenConfig tokenConfig = configure.getTokenConfig();
                 Token token = Token.build(tokenConfig);
                 // 存储 token
                 tokenConfig.getTokenStore().storeToken(token, securityAccount);
@@ -83,7 +86,8 @@ public class AuthenticationFilter implements Filter {
                 if (Objects.nonNull(authenticator.getAuthenticationFailedHandlerMap())) {
                     for (AuthenticationFailedHandler authenticationFailedHandler : authenticator.getAuthenticationFailedHandlerMap().values()) {
                         try {
-                            authenticationFailedHandler.handle(request, response, authenticationException);
+                            boolean isNext = authenticationFailedHandler.handle(request, response, authenticationException);
+                            if (!isNext) break;
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
